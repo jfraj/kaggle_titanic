@@ -68,6 +68,7 @@ def checktraining(full_df, train_fraction = 0.7):
     accuracy = (true_positive + true_negative)/(true_positive + true_negative + false_positive + false_negative)
     precision = true_positive/(true_positive + false_positive)
     recall = true_positive/(true_positive + false_negative)
+    f1score = 2*precision*recall/(precision + recall)
 
 
     print '\n\n\n' + 20*'---' + '\nTraining performance summary:\n'
@@ -79,6 +80,7 @@ def checktraining(full_df, train_fraction = 0.7):
     print '\nAccuracy:\t{0}'.format(round(accuracy, 2))
     print 'Precision:\t{0}'.format(round(precision, 2))
     print 'Recall: \t{0}'.format(round(recall, 2))
+    print 'F1Score:\t{0}'.format(round(f1score,2))
 
     print '\n'
 
@@ -86,5 +88,5 @@ if __name__=='__main__':
     # Data file name
     traincsvname = 'data/train.csv'
     fullsample_df = pd.read_csv(traincsvname, header=0)
-    training_fraction = 0.5
+    training_fraction = 0.7
     checktraining(fullsample_df, training_fraction)
