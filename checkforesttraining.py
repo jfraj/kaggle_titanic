@@ -60,7 +60,7 @@ def checktraining(full_df, train_fraction = 0.7):
                 false_positive += 1
         else:#Prediction: passager died
             if itrue:#Passager did survive
-                false_positive += 1
+                false_negative += 1
             else:
                 true_negative += 1
 
