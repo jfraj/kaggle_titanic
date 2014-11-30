@@ -1,3 +1,8 @@
+"""
+First test using random forest
+As suggested by the kaggle tutorial:
+https://kaggle2.blob.core.windows.net/competitions-data/kaggle/3136/myfirstforest.py?sv=2012-02-12&se=2014-11-25T16%3A49%3A30Z&sr=b&sp=r&sig=Yhk7wx8QpG%2FeX9ivMcCKLDrR2sHqIxkhodak2uifteE%3D
+"""
 import pandas as pd
 import numpy as np
 import csv
@@ -52,6 +57,16 @@ def clean_data(df):
             median_fare[f] = df[ df.Pclass == f+1 ]['Fare'].dropna().median()
         for f in range(0,3):
             df.loc[ (df.Fare.isnull()) & (df.Pclass == f+1 ), 'Fare'] = median_fare[f]
+    ## Ticket
+    ## Tickets are like A/5 21171, let's use the last part as a number
+    #df['Ticket_number'] = [int(x.split()[-1]) for x in df.Ticket if x.split()[-1].isdigit()]
+    ticket_number_list=[]
+    for iticket in df.Ticket:
+         if iticket.split()[-1].isdigit():
+             ticket_number_list.append(int( iticket.split()[-1]))
+         else:
+             ticket_number_list.append(-100000)
+    df['Ticket_number'] = ticket_number_list
     
     return df
 
@@ -79,6 +94,8 @@ if __name__=='__main__':
     print 'Training...'
     forest = RandomForestClassifier(n_estimators=100)
     forest = forest.fit( train_data[0::,1::], train_data[0::,0] )
+    print train_df.head()
+    print forest.feature_importances_
 
     print 'Predicting...'
     output = forest.predict(test_data).astype(int)
