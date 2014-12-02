@@ -57,6 +57,7 @@ def clean_data(df):
             median_fare[f] = df[ df.Pclass == f+1 ]['Fare'].dropna().median()
         for f in range(0,3):
             df.loc[ (df.Fare.isnull()) & (df.Pclass == f+1 ), 'Fare'] = median_fare[f]
+
     ## Ticket
     ## Tickets are like A/5 21171, let's use the last part as a number
     #df['Ticket_number'] = [int(x.split()[-1]) for x in df.Ticket if x.split()[-1].isdigit()]
@@ -65,9 +66,9 @@ def clean_data(df):
          if iticket.split()[-1].isdigit():
              ticket_number_list.append(int( iticket.split()[-1]))
          else:
-             ticket_number_list.append(-100000)
+             ticket_number_list.append(-100000)#Maybe NA would be a better default
     df['Ticket_number'] = ticket_number_list
-    
+
     return df
 
 if __name__=='__main__':
