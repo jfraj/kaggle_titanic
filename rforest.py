@@ -48,10 +48,18 @@ class RandomForestModel(object):
 
         ## Age
         ##Need to be updated by the class/gender medians
-        median_age = self.df_train['Age'].dropna().median()
-        if len(self.df_train.Age[ self.df_train.Age.isnull() ]) > 0:
-            self.df_train.loc[ (self.df_train.Age.isnull()), 'Age'] = median_age
-
+        #median_age = self.df_train['Age'].dropna().median()
+        #if len(self.df_train.Age[ self.df_train.Age.isnull() ]) > 0:
+        #    self.df_train.loc[ (self.df_train.Age.isnull()), 'Age'] = median_age
+        median_ages = np.zeros((2,3))
+        ## Get the median ages
+        for i in range(0,2):
+            for j in range(0, 3):
+                median_ages[i, j] = self.df_train[(self.df_train['Gender']==i) & (self.df_train['Pclass']==j+1)]['Age'].dropna().median()
+        ## Fill the median age to na
+        for i in range(0,2):
+            for j in range(0,3):
+                self.df_train.loc[ (self.df_train.Age.isnull()) & (self.df_train.Gender == i) & (self.df_train.Pclass == j+1),'Age'] = median_ages[i, j]
 
         ## Fare
         # All the missing Fares -> assume median of their respective class
