@@ -92,10 +92,12 @@ class RandomForestModel(object):
         scores = cross_validation.cross_val_score(forest, train_data[0:,1:], train_data[0:,0], cv=10)
 
         #predictions = forest.predict(validation_data[0::,1::]).astype(int)
-        print 'Scores'
+        print '\nScores'
         print scores
-        print "Cross_validation Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
+        print "\n\nCross_validation Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
         #raw_input('ok...')
+        return {'scores': scores}
+
 
 
 if __name__=='__main__':
