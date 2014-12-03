@@ -219,6 +219,7 @@ def vary_nsamples(full_df, validation_fraction = 0.3, n_estimators=40):
     ax1.plot(nsample_list, recalls,marker='s', label='Recalls')
     ax1.set_xlabel('# of passagers for training')
     ax1.legend(loc='lower right')
+    plt.grid()
     fig1.show()
 
     fig2, ax2 = plt.subplots()
@@ -226,6 +227,7 @@ def vary_nsamples(full_df, validation_fraction = 0.3, n_estimators=40):
     ax2.plot(nsample_list, f1scores_self,marker='o', label='F1Score (self)')
     ax2.legend(loc='lower right')
     ax2.set_xlabel('# of passagers for training')
+    plt.grid()
     fig2.show()
 
     fig3, ax3 = plt.subplots()
@@ -233,6 +235,7 @@ def vary_nsamples(full_df, validation_fraction = 0.3, n_estimators=40):
     ax3.plot(nsample_list, precisions_self,marker='s', label='Precision (self)')
     ax3.set_xlabel('# of passagers for training')
     ax3.legend(loc='lower right')
+    plt.grid()
     fig3.show()
 
     raw_input('press enter when finished...')

@@ -30,6 +30,7 @@ def scoreVSnsamples():
     axs.errorbar(fraction_list, accuracy_mean_list, yerr=accuracy_std_list, fmt='o')
     axs.set_title('Accuracy vs sample fraction')
     plt.xlim(0, 1.05)
+    plt.grid()
     plt.show()
 
 if __name__=='__main__':
