@@ -8,6 +8,7 @@
 from __future__ import division
 import pandas as pd
 import numpy as np
+import csv
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import cross_validation
 
@@ -127,7 +128,50 @@ class RandomForestModel(object):
         #raw_input('ok...')
         return {'scores': scores}
 
+    def make_prediction(self, test_data_fname):
+        """
+        Predict the survival on the on the csv
+        """
+        df_test = pd.read_csv(test_data_fname)
+        
+        #######
+        ## Cleaning
+
+        ## Training set
+        self.clean_data(self.df_train)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        train_data = self.df_train.values
+        ## Test set
+        self.clean_data(df_test)
+        ids = df_test['PassengerId'].values
+        df_test = df_test.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        test_data = df_test.values
+
+        ##Training
+        print 'training...'
+        forest = RandomForestClassifier(n_estimators=40)
+        forest = forest.fit( train_data[0:,1:], train_data[0:,0])
+
+        print '\nFeatures importances'
+        for iimpotance, ifeature in zip(forest.feature_importances_, list(self.df_train.columns.values)[1:]):
+            print '{0} \t: {1} '.format(ifeature, round(iimpotance, 2))
+
+        
+        ##Predicting
+        print 'predicting...'
+        predictions = forest.predict(test_data).astype(int)
+        
+        # Writing output
+        predictions_file = open("submitforest.csv", "wb")
+        open_file_object = csv.writer(predictions_file)    
+        open_file_object.writerow(["PassengerId","Survived"])
+        open_file_object.writerows(zip(ids, predictions))
+        predictions_file.close()
+        print 'Done.'
+
+        
 
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
-    rfmodel.trainNselfCheck()
+    #rfmodel.trainNselfCheck()
+    rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
