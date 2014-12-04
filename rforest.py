@@ -167,8 +167,46 @@ class RandomForestModel(object):
         plt.show()
 
 
+    def learning_curves(self, score='accuracy', nestimators=40):
+        """
+        Creates a plot score vs # of training examples
+        possible score:
+        ['accuracy', 'adjusted_rand_score', 'average_precision', 'f1', 'log_loss', 'mean_absolute_error', 'mean_squared_error', 'precision', 'r2', 'recall', 'roc_auc']
+        """
+        ## Data clean up for training
+        self.clean_data(self.df_train)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        train_data = self.df_train.values
+        X = train_data[0:,1:]
+        y = train_data[0:,0]
+        train_sizes = [x / 10.0 for x in range(1, 11)]##Can be other formats
 
-    
+        print 'learning...'
+        train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators), X, y, cv=10, n_jobs=1, train_sizes=train_sizes, scoring=score)
+
+        ## Plotting
+        plt.figure()
+        plt.xlabel("Training examples")
+        plt.ylabel(score)
+        plt.title("Learning Curves (RandomForest n_estimators={0})".format(nestimators))
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        plt.grid()        
+        plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                         train_scores_mean + train_scores_std, alpha=0.1,
+                         color="r")
+        plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std, alpha=0.1, color="g")
+        plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+             label="Training score")
+        plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+             label="Cross-validation score")
+        plt.legend(loc="best")
+        print 'Done'
+        plt.show()
+
     def make_prediction(self, test_data_fname):
         """
         Predict the survival on the on the csv
@@ -216,4 +254,5 @@ if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
     #rfmodel.trainNselfCheck()
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
-    rfmodel.validation_curves()
+    #rfmodel.validation_curves()
+    rfmodel.learning_curves()
