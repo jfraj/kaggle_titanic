@@ -8,9 +8,12 @@
 from __future__ import division
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import csv
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.learning_curve import validation_curve
 from sklearn import cross_validation
+from sklearn.learning_curve import learning_curve
 
 class RandomForestModel(object):
     """
@@ -128,6 +131,44 @@ class RandomForestModel(object):
         #raw_input('ok...')
         return {'scores': scores}
 
+    def validation_curves(self):
+        """
+        Based on the scikit-learn documentation:
+        http://scikit-learn.org/stable/modules/learning_curve.html
+        possible scoring for randomforest:
+        ['accuracy', 'adjusted_rand_score', 'average_precision', 'f1', 'log_loss', 'mean_absolute_error', 'mean_squared_error', 'precision', 'r2', 'recall', 'roc_auc']
+        """
+        ## Data clean up for training
+        self.clean_data(self.df_train)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        train_data = self.df_train.values
+
+        ##Validation curves
+        paramater4validation = "n_estimators"
+        param_range = [1,2,4,8,16,32,64,100]
+        train_scores, test_scores = validation_curve(
+            RandomForestClassifier(), train_data[0:,1:], train_data[0:,0], param_name=paramater4validation, param_range=param_range,
+            cv=10, scoring="accuracy", n_jobs=1)
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        plt.title("Validation Curve")
+        plt.xlabel(paramater4validation)
+        plt.ylabel("Score")
+        plt.ylim(0.0, 1.1)
+        plt.plot(param_range, train_scores_mean, label="Training score", color="r")
+        plt.fill_between(param_range, train_scores_mean - train_scores_std,
+                 train_scores_mean + train_scores_std, alpha=0.2, color="r")
+        plt.plot(param_range, test_scores_mean, label="Cross-validation score",
+             color="g")
+        plt.fill_between(param_range, test_scores_mean - test_scores_std,
+                 test_scores_mean + test_scores_std, alpha=0.2, color="g")
+        plt.show()
+
+
+
+    
     def make_prediction(self, test_data_fname):
         """
         Predict the survival on the on the csv
@@ -174,4 +215,5 @@ class RandomForestModel(object):
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
     #rfmodel.trainNselfCheck()
-    rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
+    #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
+    rfmodel.validation_curves()
