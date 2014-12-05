@@ -86,6 +86,13 @@ class RandomForestModel(object):
         #df['Ticket_number'] = ticket_number_list
         df.loc[:,'Ticket_number'] = ticket_number_list
 
+        ## Pclass
+        ## Transforming the class as single (binary)
+        dfclass = pd.get_dummies(df['Pclass'], prefix='cl')
+        df["cl_1"] = dfclass["cl_1"]
+        df["cl_2"] = dfclass["cl_2"]
+        df["cl_3"] = dfclass["cl_3"]
+
     def trainNselfCheck(self, train_fraction = 1):
         """
         Train the model on a fraction of the data and check on another fraction
@@ -104,9 +111,12 @@ class RandomForestModel(object):
         ## Data clean up for training
         self.clean_data(self.df_train)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Embarked'], axis=1)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Age', 'Fare', 'Ticket_number', 'Gender'], axis=1)
+        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Age', 'Fare', 'Pclass'], axis=1)
+
         ## Convert to numpy array
         train_data = self.df_train.values
         train_data = train_data[:ntrain,:]
@@ -140,7 +150,7 @@ class RandomForestModel(object):
         """
         ## Data clean up for training
         self.clean_data(self.df_train)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass'], axis=1)
         train_data = self.df_train.values
 
         ##Validation curves
@@ -172,10 +182,12 @@ class RandomForestModel(object):
         Creates a plot score vs # of training examples
         possible score:
         ['accuracy', 'adjusted_rand_score', 'average_precision', 'f1', 'log_loss', 'mean_absolute_error', 'mean_squared_error', 'precision', 'r2', 'recall', 'roc_auc']
+        more info here:
+        http://scikit-learn.org/stable/modules/learning_curve.html
         """
         ## Data clean up for training
         self.clean_data(self.df_train)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass'], axis=1)
         train_data = self.df_train.values
         X = train_data[0:,1:]
         y = train_data[0:,0]
@@ -252,7 +264,7 @@ class RandomForestModel(object):
 
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
-    #rfmodel.trainNselfCheck()
+    rfmodel.trainNselfCheck()
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
-    rfmodel.learning_curves()
+    #rfmodel.learning_curves()
