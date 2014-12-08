@@ -188,6 +188,8 @@ class RandomForestModel(object):
         ## Data clean up for training
         self.clean_data(self.df_train)
         self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass'], axis=1)
+        print 'Training on the following features:'
+        print list(self.df_train.columns.values)
         train_data = self.df_train.values
         X = train_data[0:,1:]
         y = train_data[0:,0]
@@ -260,11 +262,27 @@ class RandomForestModel(object):
         predictions_file.close()
         print 'Done.'
 
+    def show_feature(self, feature):
+        """
+        Plot the given feature (after cleaning)
+        """
+        self.clean_data(self.df_train)
+        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
+        fig = plt.figure()
+        ax = fig.add_subplot(1,1,1)
+        ax.hist([self.df_train[self.df_train.Survived==1][feature].values, self.df_train[self.df_train.Survived==0][feature].values], alpha=0.5, bins=70, stacked=True, label=['Survived', 'Died'])
+        plt.title(feature)
+        plt.grid()
+        fig.show()
+        raw_input('press enter when finished')
+
         
 
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
-    rfmodel.trainNselfCheck()
+    #rfmodel.trainNselfCheck()
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
     #rfmodel.learning_curves()
+    rfmodel.show_feature('Fare')
