@@ -65,6 +65,7 @@ class RandomForestModel(object):
         for i in range(0,2):
             for j in range(0,3):
                 df.loc[ (df.Age.isnull()) & (df.Gender == i) & (df.Pclass == j+1),'Age'] = median_ages[i, j]
+        df['Age'] = (df['Age'] - df['Age'].mean()) / (df['Age'].max() - df['Age'].min())
 
         ## Fare
         # All the missing Fares -> assume median of their respective class
@@ -74,6 +75,7 @@ class RandomForestModel(object):
                 median_fare[f] = df[ df.Pclass == f+1 ]['Fare'].dropna().median()
             for f in range(0,3):
                 df.loc[ (df.Fare.isnull()) & (df.Pclass == f+1 ), 'Fare'] = median_fare[f]
+        df['Fare'] = (df['Fare'] - df['Fare'].mean()) / (df['Fare'].max() - df['Fare'].min())
 
         ## Ticket
         ## Tickets are like A/5 21171, let's use the last part as a number
@@ -85,6 +87,8 @@ class RandomForestModel(object):
                 ticket_number_list.append(-100000)#Maybe NA would be a better default
         #df['Ticket_number'] = ticket_number_list
         df.loc[:,'Ticket_number'] = ticket_number_list
+        # Nomalize the ticket number (there must be something to do this in scikit learn)
+        df['Ticket_number'] = (df['Ticket_number'] - df['Ticket_number'].mean()) / (df['Ticket_number'].max() - df['Ticket_number'].min())
 
         ## Pclass
         ## Transforming the class as single (binary)
@@ -110,8 +114,8 @@ class RandomForestModel(object):
         ## Training set
         ## Data clean up for training
         self.clean_data(self.df_train)
-        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
+        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Ticket_number'], axis=1)
+        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Embarked'], axis=1)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Age', 'Fare', 'Ticket_number', 'Gender'], axis=1)
@@ -199,7 +203,7 @@ class RandomForestModel(object):
         train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators), X, y, cv=10, n_jobs=1, train_sizes=train_sizes, scoring=score)
 
         ## Plotting
-        plt.figure()
+        fig = plt.figure()
         plt.xlabel("Training examples")
         plt.ylabel(score)
         plt.title("Learning Curves (RandomForest n_estimators={0})".format(nestimators))
@@ -219,7 +223,8 @@ class RandomForestModel(object):
              label="Cross-validation score")
         plt.legend(loc="best")
         print 'Done'
-        plt.show()
+        fig.show()
+        raw_input('press enter when finished...')
 
     def make_prediction(self, test_data_fname):
         """
@@ -268,10 +273,12 @@ class RandomForestModel(object):
         """
         self.clean_data(self.df_train)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
+        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
+        #nbins = 70
+        nbins = 1000
         fig = plt.figure()
         ax = fig.add_subplot(1,1,1)
-        ax.hist([self.df_train[self.df_train.Survived==1][feature].values, self.df_train[self.df_train.Survived==0][feature].values], alpha=0.5, bins=70, stacked=True, label=['Survived', 'Died'])
+        ax.hist([self.df_train[self.df_train.Survived==1][feature].values, self.df_train[self.df_train.Survived==0][feature].values], alpha=0.5, bins=nbins, stacked=True, label=['Survived', 'Died'])
         plt.title(feature)
         plt.grid()
         fig.show()
@@ -284,5 +291,5 @@ if __name__=='__main__':
     #rfmodel.trainNselfCheck()
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
-    #rfmodel.learning_curves()
-    rfmodel.show_feature('Fare')
+    rfmodel.learning_curves()
+    #rfmodel.show_feature('Age')
