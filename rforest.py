@@ -22,6 +22,7 @@ class RandomForestModel(object):
     def __init__(self, train_data_fname):
         # Turn data in pandas dataframe
         self.df_train = pd.read_csv(train_data_fname)
+        self.iscleaned = False
 
     def clean_data(self, df):
         """
@@ -96,6 +97,7 @@ class RandomForestModel(object):
         df["cl_1"] = dfclass["cl_1"]
         df["cl_2"] = dfclass["cl_2"]
         df["cl_3"] = dfclass["cl_3"]
+        self.iscleaned = True
 
     def trainNselfCheck(self, train_fraction = 1):
         """
@@ -274,13 +276,38 @@ class RandomForestModel(object):
         self.clean_data(self.df_train)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId'], axis=1)
         #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
-        #nbins = 70
-        nbins = 1000
+        nbins = 50##Maybe a dic with this format {feature: nbins}
+        barwidth=1/nbins
+        #nbins = 1000
         fig = plt.figure()
-        ax = fig.add_subplot(1,1,1)
-        ax.hist([self.df_train[self.df_train.Survived==1][feature].values, self.df_train[self.df_train.Survived==0][feature].values], alpha=0.5, bins=nbins, stacked=True, label=['Survived', 'Died'])
-        plt.title(feature)
+        #plt.title(feature) ##Don't know why this messes up the axis
+
+        ## Absolute distribution
+        ax = fig.add_subplot(2,1,1)
+        ax.hist([self.df_train[self.df_train.Survived==1][feature].values, self.df_train[self.df_train.Survived==0][feature].values], alpha=0.5, bins=nbins, stacked=True, label=['Survived', 'Died'], color=['red', 'blue'], edgecolor='white', width=barwidth)
         plt.grid()
+        ax.set_ylabel('# of passengers')
+
+        ##Relative survival distribution
+        featureCuts, cutbins = pd.cut(self.df_train[feature], nbins, retbins=True)
+        grouped_survived = self.df_train[self.df_train.Survived==1]['Fare'].groupby(featureCuts)
+        grouped_died = self.df_train[self.df_train.Survived==0]['Fare'].groupby(featureCuts)
+        died_fracs = []
+        survived_fracs = []
+        filled_bins = []
+        for idied, isurvived, ibin in zip(grouped_died.count(), grouped_survived.count(), cutbins):
+            isum = idied + isurvived
+            if isum <1:
+                continue
+            died_fracs.append(idied/(idied + isurvived))
+            survived_fracs.append(isurvived/(idied + isurvived))
+            filled_bins.append(ibin)
+        ax2 = fig.add_subplot(2,1,2)
+        plt.bar(filled_bins, survived_fracs, color='red', edgecolor='white',alpha=0.5, width=barwidth, label='Survived')
+        plt.bar(filled_bins, died_fracs, color='blue', edgecolor='white',alpha=0.5, width=barwidth, label='Died')
+        ax2.set_ylabel('Fraction')
+        ax2.set_xlabel(feature)
+        plt.legend(loc='best')
         fig.show()
         raw_input('press enter when finished')
 
@@ -291,5 +318,5 @@ if __name__=='__main__':
     #rfmodel.trainNselfCheck()
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
-    rfmodel.learning_curves()
-    #rfmodel.show_feature('Age')
+    #rfmodel.learning_curves()
+    rfmodel.show_feature('Ticket_number')
