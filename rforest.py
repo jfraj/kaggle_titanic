@@ -279,11 +279,11 @@ class RandomForestModel(object):
         nbins = 50##Maybe a dic with this format {feature: nbins}
         barwidth=1/nbins
         #nbins = 1000
-        fig = plt.figure()
+        fig = plt.figure(figsize=(8,10))
         #plt.title(feature) ##Don't know why this messes up the axis
 
         ## Absolute distribution
-        ax = fig.add_subplot(2,1,1)
+        ax = fig.add_subplot(3,1,1)
         ax.hist([self.df_train[self.df_train.Survived==1][feature].values, self.df_train[self.df_train.Survived==0][feature].values], alpha=0.5, bins=nbins, stacked=True, label=['Survived', 'Died'], color=['red', 'blue'], edgecolor='white', width=barwidth)
         plt.grid()
         ax.set_ylabel('# of passengers')
@@ -295,6 +295,8 @@ class RandomForestModel(object):
         died_fracs = []
         survived_fracs = []
         filled_bins = []
+        SurvivedOverDied_list = []
+        SurvivedOverDied_filled_bins = []
         for idied, isurvived, ibin in zip(grouped_died.count(), grouped_survived.count(), cutbins):
             isum = idied + isurvived
             if isum <1:
@@ -302,12 +304,22 @@ class RandomForestModel(object):
             died_fracs.append(idied/(idied + isurvived))
             survived_fracs.append(isurvived/(idied + isurvived))
             filled_bins.append(ibin)
-        ax2 = fig.add_subplot(2,1,2)
+            if idied >=1:
+                SurvivedOverDied_list.append(isurvived/idied)
+                SurvivedOverDied_filled_bins.append(ibin)
+        ax2 = fig.add_subplot(3,1,2)
         plt.bar(filled_bins, survived_fracs, color='red', edgecolor='white',alpha=0.5, width=barwidth, label='Survived')
-        plt.bar(filled_bins, died_fracs, color='blue', edgecolor='white',alpha=0.5, width=barwidth, label='Died')
+        plt.bar(SurvivedOverDied_filled_bins, SurvivedOverDied_list, color='blue', edgecolor='white',alpha=0.5, width=barwidth, label='Died')
         ax2.set_ylabel('Fraction')
-        ax2.set_xlabel(feature)
         plt.legend(loc='best')
+        plt.grid()
+
+        ax3 = fig.add_subplot(3,1,3)
+        plt.bar(filled_bins, survived_fracs, color='green', edgecolor='white',alpha=0.5, width=barwidth)
+        ax3.set_ylabel('Survived/Died')
+        ax3.set_xlabel(feature)
+        plt.subplots_adjust(hspace=0)
+        plt.grid()
         fig.show()
         raw_input('press enter when finished')
 
@@ -320,3 +332,4 @@ if __name__=='__main__':
     #rfmodel.validation_curves()
     #rfmodel.learning_curves()
     rfmodel.show_feature('Ticket_number')
+    #rfmodel.show_feature('Fare')
