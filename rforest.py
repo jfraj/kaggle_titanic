@@ -24,6 +24,34 @@ class RandomForestModel(object):
         self.df_train = pd.read_csv(train_data_fname)
         self.iscleaned = False
 
+    def substrings_in_string(self, big_string, substrings):
+        """
+        Returns the substrings if found in big_string
+        else return np.nan
+        """
+        for substring in substrings:
+            if substring in big_string:
+                return substring
+        print big_string
+        return np.nan
+    def replace_titles(self, x):
+        title=x['Title']
+        if title in ['Mr', 'Don', 'Major', 'Capt', 'Jonkheer', 'Rev', 'Col']:
+            return 0#Mr
+        elif title in ['Countess', 'Mme']:
+            return 1#Mrs
+        elif title in ['Mlle', 'Ms']:
+            return 2#Miss
+        elif title =='Dr':
+            if x['Sex']=='Male':
+                return 0#Mr
+            else:
+                return 1#Mrs
+        else:
+            #return title
+            return 3
+
+
     def clean_data(self, df):
         """
         Cleans self.df_train
@@ -97,14 +125,33 @@ class RandomForestModel(object):
         df["cl_1"] = dfclass["cl_1"]
         df["cl_2"] = dfclass["cl_2"]
         df["cl_3"] = dfclass["cl_3"]
+
+        ## Title (from name)
+        ## As suggested here:
+        ## http://triangleinequality.wordpress.com/2013/09/08/basic-feature-engineering-with-the-titanic-data/
+        title_list=['Mrs', 'Mr', 'Master', 'Miss', 'Major', 'Rev',
+                    'Dr', 'Ms', 'Mlle','Col', 'Capt', 'Mme', 'Countess',
+                    'Don', 'Jonkheer']
+        df['Title'] = df['Name'].map(lambda x: self.substrings_in_string(x, title_list))
+        df['Title']=df.apply(self.replace_titles, axis=1)
+        dftitle = pd.get_dummies(df['Title'], prefix='title')
+        
+        df["title_0"] = dftitle["title_0"]
+        df["title_1"] = dftitle["title_1"]
+        df["title_2"] = dftitle["title_2"]
+        df["title_3"] = dftitle["title_3"]
+
+        df.drop(['Title',], axis=1, inplace=True)
         self.iscleaned = True
+        return df
 
     def trainNselfCheck(self, train_fraction = 1):
         """
         Train the model on a fraction of the data and check on another fraction
         Warning: this will affect self.df_train because it calls self.clean_data(self.df_train)
         """
-
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
+        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2']
         # Separate the training sample into two samples
         # One for training and one to study the error
         nall = len(self.df_train)
@@ -116,12 +163,7 @@ class RandomForestModel(object):
         ## Training set
         ## Data clean up for training
         self.clean_data(self.df_train)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Ticket_number'], axis=1)
-        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass'], axis=1)
-        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Embarked'], axis=1)
-        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
-        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Age', 'Fare', 'Ticket_number', 'Gender'], axis=1)
-        #self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Age', 'Fare', 'Pclass'], axis=1)
+        self.df_train = self.df_train.drop(columns2drop, axis=1)
 
         ## Convert to numpy array
         train_data = self.df_train.values
@@ -191,9 +233,12 @@ class RandomForestModel(object):
         more info here:
         http://scikit-learn.org/stable/modules/learning_curve.html
         """
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass']
+        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','Gender']
+
         ## Data clean up for training
         self.clean_data(self.df_train)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass'], axis=1)
+        self.df_train = self.df_train.drop(columns2drop, axis=1)
         print 'Training on the following features:'
         print list(self.df_train.columns.values)
         train_data = self.df_train.values
@@ -233,18 +278,20 @@ class RandomForestModel(object):
         Predict the survival on the on the csv
         """
         df_test = pd.read_csv(test_data_fname)
-        
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass']
+        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','Gender','SibSp']
+
         #######
         ## Cleaning
 
         ## Training set
         self.clean_data(self.df_train)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        self.df_train = self.df_train.drop(columns2drop, axis=1)
         train_data = self.df_train.values
         ## Test set
         self.clean_data(df_test)
         ids = df_test['PassengerId'].values
-        df_test = df_test.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked'], axis=1)
+        df_test = df_test.drop(columns2drop, axis=1)
         test_data = df_test.values
 
         ##Training
@@ -328,8 +375,8 @@ class RandomForestModel(object):
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
     #rfmodel.trainNselfCheck()
-    #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
+    rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
     #rfmodel.learning_curves()
-    rfmodel.show_feature('Ticket_number')
+    #rfmodel.show_feature('Ticket_number')
     #rfmodel.show_feature('Fare')
