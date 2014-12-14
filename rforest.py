@@ -70,7 +70,7 @@ class RandomForestModel(object):
         # here Embarked.mode.values is a numpy.ndarray type (what pandas use to store strings) 
         if len(df.Embarked[df.Embarked.isnull() ]) > 0:
             most_common_value = df.Embarked.dropna().mode().values[0]
-            df.loc[df.Embarked.isnull(),'Embarked'] = most_common_value 
+            df.loc[df.Embarked.isnull(),'Embarked'] = most_common_value
 
         # The following lines produce [(0, 'C'), (1, 'Q'), (2, 'S')]
         #Ports = list(enumerate(np.unique(df['Embarked'])))
@@ -79,6 +79,10 @@ class RandomForestModel(object):
         Ports_dict = {'Q': 1, 'C': 0, 'S': 2}
         # Converting port string as port int
         df.Embarked = df.Embarked.map( lambda x: Ports_dict[x]).astype(int)
+        dfembk = pd.get_dummies(df['Embarked'], prefix='port')
+        df["port_0"] = dfembk["port_0"]
+        df["port_1"] = dfembk["port_1"]
+        df["port_2"] = dfembk["port_2"]
 
         ## Age
         ##Need to be updated by the class/gender medians
@@ -150,8 +154,8 @@ class RandomForestModel(object):
         Train the model on a fraction of the data and check on another fraction
         Warning: this will affect self.df_train because it calls self.clean_data(self.df_train)
         """
-        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
-        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2']
+        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2']
         # Separate the training sample into two samples
         # One for training and one to study the error
         nall = len(self.df_train)
@@ -374,8 +378,8 @@ class RandomForestModel(object):
 
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
-    #rfmodel.trainNselfCheck()
-    rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
+    rfmodel.trainNselfCheck()
+    #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
     #rfmodel.learning_curves()
     #rfmodel.show_feature('Ticket_number')
