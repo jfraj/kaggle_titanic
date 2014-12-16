@@ -188,7 +188,12 @@ class RandomForestModel(object):
         print "\n\nCross_validation Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() / 2)
 
         print '\nFeatures importances'
-        for iimpotance, ifeature in zip(forest.feature_importances_, list(self.df_train.columns.values)[1:]):
+        ## First get them in order
+        ord_idx = np.argsort(forest.feature_importances_)
+        #feature_names = list(self.df_train.columns.values[1:])
+        feature_names = np.array(self.df_train.columns.values[1:])
+        print feature_names
+        for iimpotance, ifeature in zip(forest.feature_importances_[ord_idx[::-1]], feature_names[ord_idx[::-1]]):
             print '{0} \t: {1} '.format(ifeature, round(iimpotance, 2))
         #raw_input('ok...')
         return {'scores': scores}
