@@ -14,6 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.learning_curve import validation_curve
 from sklearn import cross_validation
 from sklearn.learning_curve import learning_curve
+from sklearn.decomposition import PCA
 
 class RandomForestModel(object):
     """
@@ -377,15 +378,34 @@ class RandomForestModel(object):
         plt.subplots_adjust(hspace=0)
         plt.grid()
         fig.show()
-        raw_input('press enter when finished')
+        raw_input('press enter when finished...')
 
+    def show_PCA(self):
+        """
+        Plotting the train sample into its two principal components
+        Not very helpfull...
+        """
+        self.clean_data(self.df_train)
+        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
+        self.df_train = self.df_train.drop(columns2drop, axis=1)
+        train_data = self.df_train.values
+        train_pca = PCA(n_components=2).fit_transform(train_data[0:,1:])
+
+        ##plotting
+        fig = plt.figure()
+        plt.scatter(train_pca[train_data[0:,0]==1,0], train_pca[train_data[0:,0]==1,1],c='b', label='Survived')
+        plt.scatter(train_pca[train_data[0:,0]==0,0], train_pca[train_data[0:,0]==0,1],c='r', label='Died')
+        plt.legend(loc='best')
+        fig.show()
+        raw_input('press enter when finished...')
         
 
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
-    rfmodel.trainNselfCheck()
+    #rfmodel.trainNselfCheck()
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
     #rfmodel.learning_curves()
     #rfmodel.show_feature('Ticket_number')
     #rfmodel.show_feature('Fare')
+    rfmodel.show_PCA()
