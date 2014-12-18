@@ -15,6 +15,7 @@ from sklearn.learning_curve import validation_curve
 from sklearn import cross_validation
 from sklearn.learning_curve import learning_curve
 from sklearn.decomposition import PCA
+from sklearn import grid_search
 
 class RandomForestModel(object):
     """
@@ -398,6 +399,27 @@ class RandomForestModel(object):
         plt.legend(loc='best')
         fig.show()
         raw_input('press enter when finished...')
+
+    def param_grid_search(self):
+        """
+        Using grid search to find the best parameters
+        """
+        parameters = {'max_depth': [3,4,5,9,11], 'n_estimators' : [10, 40, 80, 200]}
+        self.clean_data(self.df_train)
+        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
+        self.df_train = self.df_train.drop(columns2drop, axis=1)
+
+        ## Convert to numpy array
+        train_data = self.df_train.values
+        X = train_data[0:,1:]
+        Y = train_data[0:,0]
+
+        rf_grid = grid_search.GridSearchCV(RandomForestClassifier(), parameters)
+        rf_grid.fit(X, Y)
+        print '----------------------'
+        print rf_grid.best_params_
+        print rf_grid.best_score_
+        
         
 
 if __name__=='__main__':
@@ -408,4 +430,5 @@ if __name__=='__main__':
     #rfmodel.learning_curves()
     #rfmodel.show_feature('Ticket_number')
     #rfmodel.show_feature('Fare')
-    rfmodel.show_PCA()
+    #rfmodel.show_PCA()
+    rfmodel.param_grid_search()
