@@ -151,7 +151,7 @@ class RandomForestModel(object):
         self.iscleaned = True
         return df
 
-    def trainNselfCheck(self, train_fraction = 1):
+    def trainNselfCheck(self):
         """
         Train the model on a fraction of the data and check on another fraction
         Warning: this will affect self.df_train because it calls self.clean_data(self.df_train)
@@ -161,10 +161,6 @@ class RandomForestModel(object):
         # Separate the training sample into two samples
         # One for training and one to study the error
         nall = len(self.df_train)
-        ntrain = int(train_fraction*nall)
-
-        #train_df = self.df_train.loc[:ntrain-1, :]
-        #self.df_train = self.df_train.drop(df.index[-ntrain:])
 
         ## Training set
         ## Data clean up for training
@@ -173,10 +169,8 @@ class RandomForestModel(object):
 
         ## Convert to numpy array
         train_data = self.df_train.values
-        train_data = train_data[:ntrain,:]
 
         ## Training
-        print 'training with %d examples...'%len(train_data)
         forest = RandomForestClassifier(n_estimators=40)
         forest = forest.fit( train_data[0:,1:], train_data[0:,0] )
 
@@ -404,7 +398,14 @@ class RandomForestModel(object):
         """
         Using grid search to find the best parameters
         """
-        parameters = {'max_depth': [3,4,5,9,11], 'n_estimators' : [10, 40, 80, 200]}
+        #parameters = {'max_depth': [3,4,5,9,11], 'n_estimators' : [10, 40, 80, 200]}
+        #max_depths = [3,4]
+        #nestimators = [10, 40]
+        #max_depths = [3,4,5,9,11]
+        #nestimators = [10, 40, 80, 200]
+        max_depths = [2,3,4,5,6,7,8,9,11,15,20]
+        nestimators = [5, 10, 20, 30, 50, 70, 80, 100, 150, 200]
+        parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
         self.clean_data(self.df_train)
         columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
         self.df_train = self.df_train.drop(columns2drop, axis=1)
@@ -416,19 +417,34 @@ class RandomForestModel(object):
 
         rf_grid = grid_search.GridSearchCV(RandomForestClassifier(), parameters)
         rf_grid.fit(X, Y)
+        score_dict = rf_grid.grid_scores_
+        scores = [x[1] for x in score_dict]
+        scores = np.array(scores).reshape(len(max_depths), len(nestimators))
+        print scores
+        fig = plt.figure()
+        plt.imshow(scores, interpolation='nearest', cmap=plt.cm.spectral)
+        plt.colorbar()
+        plt.ylabel('max_depths')
+        plt.yticks(np.arange(len(max_depths)), max_depths)
+        plt.xlabel('n_estimators')
+        plt.xticks(np.arange(len(nestimators)), nestimators)
+        plt.gca().invert_yaxis()
+        fig.show()
         print '----------------------'
+        print 'best parameters:'
         print rf_grid.best_params_
+        print 
         print rf_grid.best_score_
-        
+        raw_input('press enter to finished...')
         
 
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
-    #rfmodel.trainNselfCheck()
+    rfmodel.trainNselfCheck()
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
     #rfmodel.validation_curves()
     #rfmodel.learning_curves()
     #rfmodel.show_feature('Ticket_number')
     #rfmodel.show_feature('Fare')
     #rfmodel.show_PCA()
-    rfmodel.param_grid_search()
+    #rfmodel.param_grid_search()
