@@ -151,13 +151,12 @@ class RandomForestModel(object):
         self.iscleaned = True
         return df
 
-    def trainNselfCheck(self):
+    def trainNselfCheck(self,columns2drop, maxdepth=8, nestimators = 80):
         """
         Train the model on a fraction of the data and check on another fraction
         Warning: this will affect self.df_train because it calls self.clean_data(self.df_train)
         """
-        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
-        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2']
+
         # Separate the training sample into two samples
         # One for training and one to study the error
         nall = len(self.df_train)
@@ -171,13 +170,18 @@ class RandomForestModel(object):
         train_data = self.df_train.values
 
         ## Training
-        forest = RandomForestClassifier(n_estimators=40)
+        forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
         forest = forest.fit( train_data[0:,1:], train_data[0:,0] )
 
 
         ## Determine the score based of multiple cross validation
         scores = cross_validation.cross_val_score(forest, train_data[0:,1:], train_data[0:,0], cv=25)
 
+        print '\n\n-------------------------------------\n  Summary\n'
+        print 'Using the parameters'
+        print 'max_depth = %d'%maxdepth
+        print 'n_estimators = %d'%nestimators
+        
         #predictions = forest.predict(validation_data[0::,1::]).astype(int)
         print '\nScores'
         print scores
@@ -188,13 +192,13 @@ class RandomForestModel(object):
         ord_idx = np.argsort(forest.feature_importances_)
         #feature_names = list(self.df_train.columns.values[1:])
         feature_names = np.array(self.df_train.columns.values[1:])
-        print feature_names
+        #print feature_names
         for iimpotance, ifeature in zip(forest.feature_importances_[ord_idx[::-1]], feature_names[ord_idx[::-1]]):
             print '{0} \t: {1} '.format(ifeature, round(iimpotance, 2))
         #raw_input('ok...')
         return {'scores': scores}
 
-    def validation_curves(self):
+    def validation_curves(self, columns2drop):
         """
         Based on the scikit-learn documentation:
         http://scikit-learn.org/stable/modules/learning_curve.html
@@ -202,24 +206,29 @@ class RandomForestModel(object):
         ['accuracy', 'adjusted_rand_score', 'average_precision', 'f1', 'log_loss', 'mean_absolute_error', 'mean_squared_error', 'precision', 'r2', 'recall', 'roc_auc']
         """
         ## Data clean up for training
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','port_0','port_1','port_2']
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass']
         self.clean_data(self.df_train)
-        self.df_train = self.df_train.drop(['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass'], axis=1)
+        self.df_train = self.df_train.drop(columns2drop, axis=1)
         train_data = self.df_train.values
 
         ##Validation curves
-        paramater4validation = "n_estimators"
-        param_range = [1,2,4,8,16,32,64,100]
+        #paramater4validation = "n_estimators"
+        #param_range = [1,2,4,8,16,32,64,100]
+        paramater4validation = "max_depth"
+        param_range = [2,3,4,5,6,7,8,9,11,15,20]
         train_scores, test_scores = validation_curve(
-            RandomForestClassifier(), train_data[0:,1:], train_data[0:,0], param_name=paramater4validation, param_range=param_range,
+            RandomForestClassifier(n_estimators=100), train_data[0:,1:], train_data[0:,0], param_name=paramater4validation, param_range=param_range,
             cv=10, scoring="accuracy", n_jobs=1)
         train_scores_mean = np.mean(train_scores, axis=1)
         train_scores_std = np.std(train_scores, axis=1)
         test_scores_mean = np.mean(test_scores, axis=1)
         test_scores_std = np.std(test_scores, axis=1)
+        fig = plt.figure()
         plt.title("Validation Curve")
         plt.xlabel(paramater4validation)
         plt.ylabel("Score")
-        plt.ylim(0.0, 1.1)
+        #plt.ylim(0.0, 1.1)
         plt.plot(param_range, train_scores_mean, label="Training score", color="r")
         plt.fill_between(param_range, train_scores_mean - train_scores_std,
                  train_scores_mean + train_scores_std, alpha=0.2, color="r")
@@ -227,10 +236,13 @@ class RandomForestModel(object):
              color="g")
         plt.fill_between(param_range, test_scores_mean - test_scores_std,
                  test_scores_mean + test_scores_std, alpha=0.2, color="g")
-        plt.show()
+        plt.grid()
+        plt.legend(loc='best')
+        fig.show()
+        raw_input('press enter when finished...')
 
 
-    def learning_curves(self, score='accuracy', nestimators=40):
+    def learning_curves(self, columns2drop, score='accuracy', nestimators=80, maxdepth=8):
         """
         Creates a plot score vs # of training examples
         possible score:
@@ -239,7 +251,7 @@ class RandomForestModel(object):
         http://scikit-learn.org/stable/modules/learning_curve.html
         """
         #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass']
-        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','Gender']
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','Gender','SibSp']
 
         ## Data clean up for training
         self.clean_data(self.df_train)
@@ -252,13 +264,13 @@ class RandomForestModel(object):
         train_sizes = [x / 10.0 for x in range(1, 11)]##Can be other formats
 
         print 'learning...'
-        train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators), X, y, cv=10, n_jobs=1, train_sizes=train_sizes, scoring=score)
+        train_sizes, train_scores, test_scores = learning_curve(RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth), X, y, cv=10, n_jobs=1, train_sizes=train_sizes, scoring=score)
 
         ## Plotting
         fig = plt.figure()
         plt.xlabel("Training examples")
         plt.ylabel(score)
-        plt.title("Learning Curves (RandomForest n_estimators={0})".format(nestimators))
+        plt.title("Learning Curves (RandomForest n_estimators={0}, max_depth={1})".format(nestimators, maxdepth))
         train_scores_mean = np.mean(train_scores, axis=1)
         train_scores_std = np.std(train_scores, axis=1)
         test_scores_mean = np.mean(test_scores, axis=1)
@@ -394,10 +406,13 @@ class RandomForestModel(object):
         fig.show()
         raw_input('press enter when finished...')
 
-    def param_grid_search(self):
+    def param_grid_search(self, columns2drop):
         """
         Using grid search to find the best parameters
         """
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','port_0','port_1','port_2']
+
         #parameters = {'max_depth': [3,4,5,9,11], 'n_estimators' : [10, 40, 80, 200]}
         #max_depths = [3,4]
         #nestimators = [10, 40]
@@ -407,7 +422,6 @@ class RandomForestModel(object):
         nestimators = [5, 10, 20, 30, 50, 70, 80, 100, 150, 200]
         parameters = {'max_depth': max_depths, 'n_estimators' : nestimators}
         self.clean_data(self.df_train)
-        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
         self.df_train = self.df_train.drop(columns2drop, axis=1)
 
         ## Convert to numpy array
@@ -420,7 +434,7 @@ class RandomForestModel(object):
         score_dict = rf_grid.grid_scores_
         scores = [x[1] for x in score_dict]
         scores = np.array(scores).reshape(len(max_depths), len(nestimators))
-        print scores
+        #print scores
         fig = plt.figure()
         plt.imshow(scores, interpolation='nearest', cmap=plt.cm.spectral)
         plt.colorbar()
@@ -440,11 +454,18 @@ class RandomForestModel(object):
 
 if __name__=='__main__':
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
-    rfmodel.trainNselfCheck()
+    ##Keep many features
+    #columns2Drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
+    #nestim, maxdep = 70, 8
+    
+    columns2Drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','port_0','port_1','port_2']
+    nestim, maxdep = 100, 11
+
+    #rfmodel.trainNselfCheck(columns2Drop)
     #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
-    #rfmodel.validation_curves()
-    #rfmodel.learning_curves()
+    rfmodel.validation_curves(columns2Drop)
+    #rfmodel.learning_curves(columns2Drop, 'accuracy', nestim, maxdep)
     #rfmodel.show_feature('Ticket_number')
     #rfmodel.show_feature('Fare')
     #rfmodel.show_PCA()
-    #rfmodel.param_grid_search()
+    #rfmodel.param_grid_search(columns2Drop)
