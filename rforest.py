@@ -151,7 +151,7 @@ class RandomForestModel(object):
         self.iscleaned = True
         return df
 
-    def trainNselfCheck(self,columns2drop, maxdepth=8, nestimators = 80):
+    def trainNselfCheck(self,columns2drop, maxdepth=8, nestimators = 70):
         """
         Train the model on a fraction of the data and check on another fraction
         Warning: this will affect self.df_train because it calls self.clean_data(self.df_train)
@@ -290,13 +290,13 @@ class RandomForestModel(object):
         fig.show()
         raw_input('press enter when finished...')
 
-    def make_prediction(self, test_data_fname):
+    def make_prediction(self, test_data_fname, columns2drop, nestimators, maxdepth):
         """
         Predict the survival on the on the csv
         """
         df_test = pd.read_csv(test_data_fname)
         #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Parch', 'SibSp', 'Embarked', 'Pclass']
-        columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','Gender','SibSp']
+        #columns2drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','Gender','SibSp']
 
         #######
         ## Cleaning
@@ -313,7 +313,7 @@ class RandomForestModel(object):
 
         ##Training
         print 'training...'
-        forest = RandomForestClassifier(n_estimators=40)
+        forest = RandomForestClassifier(n_estimators=nestimators, max_depth=maxdepth)
         forest = forest.fit( train_data[0:,1:], train_data[0:,0])
 
         print '\nFeatures importances'
@@ -453,17 +453,18 @@ class RandomForestModel(object):
         
 
 if __name__=='__main__':
+    testfname = '/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv'
     rfmodel = RandomForestModel('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/train.csv')
     ##Keep many features
-    #columns2Drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
-    #nestim, maxdep = 70, 8
+    columns2Drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass']
+    nestim, maxdep = 70, 8
     
-    columns2Drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','port_0','port_1','port_2']
-    nestim, maxdep = 100, 11
+    #columns2Drop = ['Name', 'Sex', 'Ticket', 'Cabin', 'PassengerId', 'Pclass', 'Parch', 'Embarked', 'cl_1', 'cl_2', 'cl_3','title_1','title_2','port_0','port_1','port_2']
+    #nestim, maxdep = 100, 11
 
     #rfmodel.trainNselfCheck(columns2Drop)
-    #rfmodel.make_prediction('/Users/jean-francoisrajotte/projects/kaggle/titanic/data/test.csv')
-    rfmodel.validation_curves(columns2Drop)
+    rfmodel.make_prediction(testfname, columns2Drop, nestim, maxdep)
+    #rfmodel.validation_curves(columns2Drop)
     #rfmodel.learning_curves(columns2Drop, 'accuracy', nestim, maxdep)
     #rfmodel.show_feature('Ticket_number')
     #rfmodel.show_feature('Fare')
